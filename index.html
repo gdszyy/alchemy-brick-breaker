@@ -372,7 +372,7 @@ const CONFIG = {
         slotRecall: '#a855f7', 
         slotMulticast: '#f97316',
         slotSplit: '#3b82f6',
-        slotEnlarge: '#22c55e'
+        
     },
     physics: { gravity: 0.40, friction: 0.99, elasticity: 0.6 },
     probabilities: { white: 0.60, colored: 0.25, redStripe: 0.10, rainbow: 0.05 },
@@ -491,7 +491,7 @@ class SpecialSlot {
         if (this.type === 'recall') { color = CONFIG.colors.slotRecall; text = "↺"; }
         else if (this.type === 'multicast') { color = CONFIG.colors.slotMulticast; text = "+2"; }
         else if (this.type === 'split') { color = CONFIG.colors.slotSplit; text = "⑂"; }
-        else if (this.type === 'enlarge') { color = CONFIG.colors.slotEnlarge; text = "O"; }
+        
         const glow = Math.sin(this.animTimer) * 5 + 10;
         ctx.shadowBlur = glow; ctx.shadowColor = color; ctx.fillStyle = color; ctx.globalAlpha = 0.3;
         ctx.fillRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
@@ -558,9 +558,7 @@ class DropBall {
                         if (this.canTriggerSplitSlot) {
                             this.active = false; audio.playPowerup(); game.createExplosion(slot.x, slot.y, CONFIG.colors.slotSplit); return { action: 'split', pos: this.pos, vel: this.vel, def: this.def };
                         }
-                    } else if (slot.type === 'enlarge') {
-                        if (this.radius < 25) { this.radius = Math.min(28, this.radius + 8); audio.playPowerup(); game.createExplosion(slot.x, slot.y, CONFIG.colors.slotEnlarge); showToast("巨大化！"); }
-                    }
+                    
                 }
             }
         }
@@ -574,7 +572,7 @@ class DropBall {
                 if (this.session.currentHits >= this.session.nextTriggerThreshold) {
                     this.session.currentHits = 0; this.session.multicast++; this.session.nextTriggerThreshold++; showToast(`充能！下一次: ${this.session.nextTriggerThreshold}`); audio.playPowerup();
                 }
-                if (this.def.type === 'colored' && this.def.subtype) { peg.type = this.def.subtype; }
+                // if (this.def.type === 'colored' && this.def.subtype) { peg.type = this.def.subtype; } // 移除同化效果
                 if (this.def.type === 'rainbow' && !this.isRainbowShard) { this.active = false; return { action: 'rainbow_split', pos: this.pos, vel: this.vel }; }
                 if (peg.type !== 'normal' && peg.type !== 'pink') { this.session.collected.push(peg.type); this.def.collected.push(peg.type); }
             }
@@ -873,7 +871,7 @@ class Game {
             grid.push(rowPegs);
         }
         const pinkCount = Math.floor(Math.random() * 5) + 1; for(let i=0; i<pinkCount; i++) { if(this.pegs.length > 0) { const idx = Math.floor(Math.random() * this.pegs.length); this.pegs[idx].type = 'pink'; } }
-        const slotTypes = ['recall', 'multicast', 'split', 'enlarge'];
+        const slotTypes = ['recall', 'multicast', 'split'];
         for(let i=0; i<3; i++) {
             let r = Math.floor(Math.random() * 4) + 5; let rowPegs = grid[r]; if (!rowPegs || rowPegs.length < 2) continue;
             let c = Math.floor(Math.random() * (rowPegs.length - 1)); let p1 = rowPegs[c]; let p2 = rowPegs[c+1];
