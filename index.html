@@ -528,11 +528,16 @@ class Peg {
 class DropBall {
     constructor(x, y, marbleDef, session) {
         this.pos = new Vec2(x, y); this.vel = new Vec2((Math.random() - 0.5) * 2, 2); this.radius = 12; this.active = true; this.def = marbleDef; this.session = session;
-        this.isRainbowShard = false; this.portalCooldown = 0; this.hitCount = 0; this.canTriggerSplitSlot = true;
+        this.isRainbowShard = false; this.portalCooldown = 0; this.hitCount = 0; this.canTriggerSplitSlot = true; this.pegCooldowns = new Map();
     }
     update(pegs, slots, width, height, timeScale) {
         if (!this.active) return null;
         if (this.portalCooldown > 0) this.portalCooldown -= timeScale;
+        // 更新所有钉子的冷却时间
+        for (let [peg, cooldown] of this.pegCooldowns.entries()) {
+            this.pegCooldowns.set(peg, cooldown - timeScale);
+            if (cooldown - timeScale <= 0) this.pegCooldowns.delete(peg);
+        }
         let gravityStep = new Vec2(0, CONFIG.physics.gravity * timeScale);
         this.vel = this.vel.add(gravityStep);
         this.pos = this.pos.add(this.vel.mult(timeScale));
@@ -565,9 +570,13 @@ class DropBall {
         for (let peg of pegs) {
             let dist = this.pos.dist(peg.pos); let minDist = this.radius + peg.radius;
             if (dist < minDist) {
+                // 检查该钉子是否在冷却中
+                if (this.pegCooldowns.has(peg) && this.pegCooldowns.get(peg) > 0) continue;
                 let n = this.pos.sub(peg.pos).norm(); this.pos = peg.pos.add(n.mult(minDist));
                 let elasticity = CONFIG.physics.elasticity; if (peg.type === 'pink') elasticity *= 1.8; 
                 let d = this.vel.dot(n); this.vel = this.vel.sub(n.mult(2 * d)).mult(elasticity); this.vel.x += (Math.random() - 0.5) * 0.5; peg.hit();
+                // 设置该钉子的冷却时间（15帧）
+                this.pegCooldowns.set(peg, 15);
                 this.hitCount++; this.session.currentHits++; game.createHitFeedback(this.pos.x, this.pos.y);
                 if (this.session.currentHits >= this.session.nextTriggerThreshold) {
                     this.session.currentHits = 0; this.session.multicast++; this.session.nextTriggerThreshold++; showToast(`充能！下一次: ${this.session.nextTriggerThreshold}`); audio.playPowerup();
